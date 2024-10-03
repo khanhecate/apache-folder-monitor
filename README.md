@@ -2,6 +2,14 @@
 
 Apache Folder Monitor is a bash script that sets up a systemd service to monitor a specified NFS folder for changes and automatically reload the Apache web server when changes are detected.
 
+## Repository
+
+This project is hosted on GitHub:
+
+https://github.com/khanhecate/apache-folder-monitor.git
+
+Feel free to star the repository if you find it useful, and contribute by submitting issues or pull requests.
+
 ## Features
 
 - Monitors a specified NFS folder for file changes
@@ -19,17 +27,22 @@ Apache Folder Monitor is a bash script that sets up a systemd service to monitor
 
 ## Installation
 
-1. Download the installation script:
+1. Clone the repository:
    ```
-   wget https://example.com/path/to/install-apache-folder-monitor.sh
+   git clone https://github.com/khanhecate/apache-folder-monitor.git
    ```
 
-2. Make the script executable:
+2. Change to the project directory:
+   ```
+   cd apache-folder-monitor
+   ```
+
+3. Make the installation script executable:
    ```
    chmod +x install-apache-folder-monitor.sh
    ```
 
-3. Run the installation script with root privileges:
+4. Run the installation script with root privileges:
    ```
    sudo ./install-apache-folder-monitor.sh
    ```
@@ -131,6 +144,14 @@ To uninstall the Apache Folder Monitor:
 - Verify that Apache is installed and configured correctly.
 - If logs are not being written or rotated as expected, check the permissions on the `/var/log` directory and the log files.
 
+## Contributing
+
+Contributions to this project are welcome! Please feel free to submit issues, fork the repository and send pull requests!
+
 ## Support
 
-For issues, questions, or contributions, please open an issue in the project repository or contact the maintainer.
+For issues, questions, or contributions, please open an issue in the [GitHub repository](https://github.com/khanhecate/apache-folder-monitor/issues).
+
+## License
+
+[Include your chosen license here, or specify if the project is not licensed]
