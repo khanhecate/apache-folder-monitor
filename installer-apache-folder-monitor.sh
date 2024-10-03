@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Variables
-SERVICE_NAME="apache-folder-monitor"
-SCRIPT_PATH="/usr/local/bin/apache-folder-monitor.sh"
+SERVICE_NAME="webserver-folder-monitor"
+SCRIPT_PATH="/usr/local/bin/webserver-folder-monitor.sh"
 SERVICE_FILE="/etc/systemd/system/$SERVICE_NAME.service"
 NFS_FOLDER="/mnt/efs/fs1/"  # Folder to monitor. Change this path as needed.
 
@@ -14,6 +14,30 @@ check_md5sum() {
     fi
 }
 
+# Function to detect the web server and Linux distribution
+detect_system() {
+    if command -v httpd >/dev/null 2>&1; then
+        WEB_SERVER="httpd"
+    elif command -v apache2 >/dev/null 2>&1; then
+        WEB_SERVER="apache2"
+    elif command -v nginx >/dev/null 2>&1; then
+        WEB_SERVER="nginx"
+    else
+        echo "Error: No supported web server (httpd, apache2, or nginx) found. Aborting installation."
+        exit 1
+    fi
+
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$NAME
+    else
+        OS=$(uname -s)
+    fi
+
+    echo "Detected web server: $WEB_SERVER"
+    echo "Detected OS: $OS"
+}
+
 # Function to create the monitoring script
 create_monitoring_script() {
     cat << EOF > $SCRIPT_PATH
@@ -21,8 +45,9 @@ create_monitoring_script() {
 
 NFS_FOLDER="$NFS_FOLDER"
 CHECK_INTERVAL=5  # Check every 5 seconds
-LOG_FILE="/var/log/apache-folder-monitor.log"  # Updated log file location
+LOG_FILE="/var/log/webserver-folder-monitor.log"
 MAX_LOG_SIZE=$((1024 * 1024))  # 1MB in bytes
+WEB_SERVER="$WEB_SERVER"
 
 previous_hash=""
 
@@ -34,6 +59,12 @@ rotate_log() {
         chmod 644 "\$LOG_FILE"
         echo "\$(date '+%Y-%m-%d %H:%M:%S') - Log file rotated" >> "\$LOG_FILE"
     fi
+}
+
+# Function to restart the web server
+restart_web_server() {
+    echo "\$(date '+%Y-%m-%d %H:%M:%S') - Restarting \$WEB_SERVER..." >> "\$LOG_FILE"
+    systemctl restart \$WEB_SERVER >> "\$LOG_FILE" 2>&1
 }
 
 while true; do
@@ -51,10 +82,9 @@ while true; do
             echo "\$(date '+%Y-%m-%d %H:%M:%S') - Log file created at \$LOG_FILE" >> "\$LOG_FILE"
         fi
 
-        # Log the changes detected and reloading process
+        # Log the changes detected and restart the web server
         echo "\$(date '+%Y-%m-%d %H:%M:%S') - Changes detected in \$NFS_FOLDER" >> "\$LOG_FILE"
-        echo "\$(date '+%Y-%m-%d %H:%M:%S') - Reloading Apache..." >> "\$LOG_FILE"
-        systemctl reload apache2 >> "\$LOG_FILE" 2>&1  # Log Apache reload output (stdout and stderr)
+        restart_web_server
 
         echo "\$(date '+%Y-%m-%d %H:%M:%S') - File Updated: \$current_hash" >> "\$LOG_FILE"
 
@@ -74,7 +104,7 @@ EOF
 create_systemd_service() {
     cat << EOF > $SERVICE_FILE
 [Unit]
-Description=Apache Folder Monitor Service
+Description=Web Server Folder Monitor Service
 After=network.target
 
 [Service]
@@ -106,6 +136,7 @@ enable_and_start_service() {
 
 # Main installation flow
 check_md5sum
+detect_system
 create_monitoring_script
 create_systemd_service
 enable_and_start_service
