@@ -21,11 +21,25 @@ create_monitoring_script() {
 
 NFS_FOLDER="$NFS_FOLDER"
 CHECK_INTERVAL=5  # Check every 5 seconds
-LOG_FILE="/tmp/apache-folder-monitor.log"  # Log file location
+LOG_FILE="/var/log/apache-folder-monitor.log"  # Updated log file location
+MAX_LOG_SIZE=$((1024 * 1024))  # 1MB in bytes
 
 previous_hash=""
 
+# Function to rotate log file
+rotate_log() {
+    if [ -f "\$LOG_FILE" ] && [ \$(stat -c%s "\$LOG_FILE") -ge \$MAX_LOG_SIZE ]; then
+        mv "\$LOG_FILE" "\$LOG_FILE.old"
+        touch "\$LOG_FILE"
+        chmod 644 "\$LOG_FILE"
+        echo "\$(date '+%Y-%m-%d %H:%M:%S') - Log file rotated" >> "\$LOG_FILE"
+    fi
+}
+
 while true; do
+    # Rotate log if necessary
+    rotate_log
+
     # Compute the hash of all files within the NFS folder
     current_hash=\$(find "\$NFS_FOLDER" -type f -exec md5sum {} + 2>/dev/null | sort | md5sum | awk '{print \$1}')
 
@@ -33,6 +47,7 @@ while true; do
         # Check if the log file exists; if not, create it
         if [ ! -f "\$LOG_FILE" ]; then
             touch "\$LOG_FILE"
+            chmod 644 "\$LOG_FILE"
             echo "\$(date '+%Y-%m-%d %H:%M:%S') - Log file created at \$LOG_FILE" >> "\$LOG_FILE"
         fi
 
