@@ -8,6 +8,7 @@ Apache Folder Monitor is a bash script that sets up a systemd service to monitor
 - Automatically reloads Apache when changes are detected
 - Runs as a systemd service for reliable operation
 - Logs all activities for easy troubleshooting
+- Implements log rotation to manage log file size
 
 ## Prerequisites
 
@@ -44,7 +45,8 @@ The main configuration is done in the installation script. You can modify the fo
 
 - `NFS_FOLDER`: The path to the folder you want to monitor (default: `/mnt/efs/fs1/`)
 - `CHECK_INTERVAL`: The interval between checks in seconds (default: 5)
-- `LOG_FILE`: The location of the log file (default: `/tmp/apache-folder-monitor.log`)
+- `LOG_FILE`: The location of the log file (default: `/var/log/apache-folder-monitor.log`)
+- `MAX_LOG_SIZE`: The maximum size of the log file before rotation in bytes (default: 1048576, which is 1MB)
 
 To change these settings after installation:
 
@@ -74,10 +76,18 @@ The service starts automatically after installation and on system boot. You can 
 
 ## Logs
 
-You can view the logs to see detected changes and Apache reload events:
+The script now implements log rotation to manage the log file size. When the log file reaches the specified maximum size (default 1MB), it will be rotated. The current log will be moved to `apache-folder-monitor.log.old`, and a new log file will be created.
+
+You can view the current logs using:
 
 ```
-sudo tail -f /tmp/apache-folder-monitor.log
+sudo tail -f /var/log/apache-folder-monitor.log
+```
+
+To view the older, rotated logs:
+
+```
+sudo cat /var/log/apache-folder-monitor.log.old
 ```
 
 ## Uninstallation
@@ -105,9 +115,9 @@ To uninstall the Apache Folder Monitor:
    sudo systemctl daemon-reload
    ```
 
-5. Optionally, remove the log file:
+5. Remove the log files:
    ```
-   sudo rm /tmp/apache-folder-monitor.log
+   sudo rm /var/log/apache-folder-monitor.log*
    ```
 
 ## Troubleshooting
@@ -119,8 +129,8 @@ To uninstall the Apache Folder Monitor:
 
 - Ensure the NFS folder is properly mounted and accessible.
 - Verify that Apache is installed and configured correctly.
+- If logs are not being written or rotated as expected, check the permissions on the `/var/log` directory and the log files.
 
 ## Support
 
 For issues, questions, or contributions, please open an issue in the project repository or contact the maintainer.
-
